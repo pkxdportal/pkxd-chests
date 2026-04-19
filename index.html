@@ -419,7 +419,9 @@
       line-height: 1;
     }
 
-    .overlay-item.selected .item-menu-btn { display: flex; }
+    .overlay-item.selected .item-menu-btn {
+      display: flex;
+    }
 
     .item-menu-panel {
       position: absolute;
@@ -464,70 +466,13 @@
       line-height: 1.35;
     }
 
-    .export-modal {
-      position: fixed;
-      inset: 0;
-      z-index: 1000;
-      background: rgba(2, 8, 24, 0.86);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      padding: 18px;
-      backdrop-filter: blur(8px);
-    }
-
-    .export-modal.open { display: flex; }
-
-    .export-card {
-      width: min(92vw, 560px);
-      max-height: 90vh;
-      overflow: auto;
-      background: rgba(10, 21, 56, 0.96);
-      border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 20px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.38);
-      padding: 16px;
-    }
-
-    .export-card h2 {
-      margin: 0 0 8px;
-      font-size: 20px;
-      font-weight: 900;
-    }
-
-    .export-card p {
-      margin: 0 0 12px;
-      color: rgba(255,255,255,0.76);
-      font-size: 13px;
-      line-height: 1.35;
-    }
-
-    .export-preview {
-      width: 100%;
-      border-radius: 14px;
-      overflow: hidden;
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.10);
-      margin-bottom: 12px;
-    }
-
-    .export-preview img {
-      display: block;
-      width: 100%;
-      height: auto;
-    }
-
-    .export-actions {
-      display: grid;
-      gap: 10px;
-    }
-
-    .results-panel {
+    .viewer-shell {
       display: none;
       width: min(100%, 1120px);
+      gap: 12px;
     }
 
-    .results-head {
+    .viewer-head {
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -536,24 +481,24 @@
       margin-bottom: 12px;
     }
 
-    .results-title {
+    .viewer-title {
       font-size: 20px;
       font-weight: 900;
       margin-bottom: 4px;
     }
 
-    .results-subtitle {
+    .viewer-subtitle {
       font-size: 13px;
       color: rgba(255,255,255,.72);
     }
 
-    .results-grid {
+    .viewer-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 12px;
     }
 
-    .result-card {
+    .viewer-card {
       background: rgba(255,255,255,0.05);
       border: 1px solid rgba(255,255,255,0.10);
       border-radius: 14px;
@@ -563,17 +508,63 @@
       gap: 8px;
     }
 
-    .result-card img {
+    .viewer-card img {
       display: block;
       width: 100%;
       height: auto;
       border-radius: 10px;
       background: rgba(255,255,255,0.04);
+      user-select: none;
+      -webkit-user-drag: none;
+      touch-action: manipulation;
     }
 
-    .result-actions {
+    .viewer-actions {
       display: grid;
       gap: 6px;
+    }
+
+    .swipe-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 1100;
+      background: rgba(2, 8, 24, 0.94);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .swipe-modal.open { display: flex; }
+
+    .swipe-inner {
+      width: 100%;
+      max-width: 980px;
+      display: grid;
+      gap: 12px;
+      justify-items: center;
+    }
+
+    .swipe-image-wrap {
+      width: 100%;
+      display: grid;
+      place-items: center;
+      min-height: 40vh;
+    }
+
+    .swipe-image-wrap img {
+      max-width: 100%;
+      max-height: 78vh;
+      display: block;
+      border-radius: 14px;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    .swipe-actions {
+      width: min(100%, 560px);
+      display: grid;
+      gap: 10px;
     }
 
     @media (max-width: 1240px) {
@@ -610,8 +601,8 @@
         -webkit-text-stroke: 8px rgba(0,0,0,0.40);
       }
 
-      .results-grid {
-        grid-template-columns: 1fr;
+      .viewer-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
       }
     }
   </style>
@@ -626,7 +617,7 @@
       <input id="titleInput" type="text" value="СУНДУКИ" placeholder="Заголовок" />
       <div class="row-2">
         <label id="bgLabel" class="file-label" for="bgInput">Выбрать фон</label>
-        <label class="file-label" for="templateInput">Загрузить шаблон</label>
+        <label id="templateLabel" class="file-label" for="templateInput">Загрузить шаблон</label>
       </div>
       <input id="bgInput" type="file" accept="image/*" />
       <input id="templateInput" type="file" accept=".json,application/json" />
@@ -678,7 +669,7 @@
         <button id="generateBtn" class="btn primary">Собрать все карточки</button>
         <button id="downloadAllBtn" class="btn">Скачать все пары</button>
       </div>
-      <div class="hint">Готовые пары появляются прямо справа под шаблоном. Там же можно скачать все сразу или по одной.</div>
+      <div class="hint">После сборки шаблон скрывается, а карточки появляются на его месте сеткой. На телефоне можно удержать карточку для скачивания и открыть просмотр со свайпами.</div>
     </div>
 
     <div class="group">
@@ -688,9 +679,9 @@
   </aside>
 
   <section class="workspace">
-    <div class="mobile-note">На телефоне: один палец двигает объект, два пальца меняют размер и поворот. После подтверждения шаблона можно работать только с фото и сохранять готовые пары.</div>
+    <div class="mobile-note">После сборки шаблон скрывается, а готовые карточки появляются на его месте. Нажми на карточку для просмотра, листай влево/вправо, удерживай для скачивания.</div>
 
-    <div class="canvas-wrap">
+    <div id="builderPanel" class="canvas-wrap">
       <div class="preview-shell">
         <div id="poster" class="poster">
           <div class="bg-layer">
@@ -722,40 +713,39 @@
       </div>
     </div>
 
-    <div id="resultsPanel" class="canvas-wrap results-panel">
-      <div class="results-head">
+    <div id="viewerShell" class="canvas-wrap viewer-shell">
+      <div class="viewer-head">
         <div>
-          <div class="results-title">Готовые пары</div>
-          <div class="results-subtitle">Карточки появляются прямо здесь. Можно скачать все сразу или по одной.</div>
+          <div class="viewer-title">Готовые карточки</div>
+          <div class="viewer-subtitle">Нажми на карточку для полного просмотра. Удержание на карточке откроет скачивание.</div>
         </div>
         <div style="display:flex; gap:10px; flex-wrap:wrap;">
-          <button id="resultsDownloadAllBtn" class="btn">Скачать все</button>
-          <button id="resultsClearBtn" class="btn">Очистить пары</button>
+          <button id="viewerBackBtn" class="btn">Назад к шаблону</button>
+          <button id="viewerDownloadAllBtn" class="btn">Скачать все</button>
         </div>
       </div>
-      <div id="resultsGrid" class="results-grid"></div>
+      <div id="viewerGrid" class="viewer-grid"></div>
     </div>
   </section>
 
-  <div id="exportModal" class="export-modal" aria-hidden="true">
-    <div class="export-card">
-      <h2>Готовое изображение</h2>
-      <p>На телефоне кнопка «Открыть изображение» открывает отдельную страницу с самим PNG. Там можно сохранить картинку через браузер.</p>
-      <div class="export-preview">
-        <img id="exportPreviewImage" alt="Готовый PNG" />
+  <div id="swipeModal" class="swipe-modal" aria-hidden="true">
+    <div class="swipe-inner">
+      <div class="swipe-image-wrap">
+        <img id="swipeImage" alt="Карточка" />
       </div>
-      <div class="export-actions">
-        <button id="exportOpenBtn" class="btn">Открыть изображение</button>
-        <button id="exportDownloadBtn" class="btn">Скачать PNG</button>
-        <button id="exportShareBtn" class="btn">Поделиться</button>
-        <button id="exportCloseBtn" class="btn">Закрыть</button>
+      <div class="swipe-actions">
+        <button id="swipePrevBtn" class="btn">← Назад</button>
+        <button id="swipeNextBtn" class="btn">Вперёд →</button>
+        <button id="swipeDownloadBtn" class="btn">Скачать</button>
+        <button id="swipeShareBtn" class="btn">Поделиться</button>
+        <button id="swipeCloseBtn" class="btn warn">Закрыть</button>
       </div>
     </div>
   </div>
 
   <script>
     const DEFAULT_STATE = {
-      version: 10,
+      version: 11,
       title: 'СУНДУКИ',
       bgImage: null,
       accentColor: '#1edbff',
@@ -785,6 +775,11 @@
     const generateBtn = document.getElementById('generateBtn');
     const downloadAllBtn = document.getElementById('downloadAllBtn');
     const poster = document.getElementById('poster');
+    const builderPanel = document.getElementById('builderPanel');
+    const viewerShell = document.getElementById('viewerShell');
+    const viewerGrid = document.getElementById('viewerGrid');
+    const viewerBackBtn = document.getElementById('viewerBackBtn');
+    const viewerDownloadAllBtn = document.getElementById('viewerDownloadAllBtn');
     const statusBox = document.getElementById('status');
     const slot1Photo = document.getElementById('slot1Photo');
     const slot2Photo = document.getElementById('slot2Photo');
@@ -796,29 +791,20 @@
     const badge2 = document.getElementById('badge2');
     const accentColorInput = document.getElementById('accentColorInput');
     const pickAccentBtn = document.getElementById('pickAccentBtn');
-    const exportModal = document.getElementById('exportModal');
-    const exportPreviewImage = document.getElementById('exportPreviewImage');
-    const exportOpenBtn = document.getElementById('exportOpenBtn');
-    const exportDownloadBtn = document.getElementById('exportDownloadBtn');
-    const exportShareBtn = document.getElementById('exportShareBtn');
-    const exportCloseBtn = document.getElementById('exportCloseBtn');
-    const resultsPanel = document.getElementById('resultsPanel');
-    const resultsGrid = document.getElementById('resultsGrid');
-    const resultsDownloadAllBtn = document.getElementById('resultsDownloadAllBtn');
-    const resultsClearBtn = document.getElementById('resultsClearBtn');
+    const swipeModal = document.getElementById('swipeModal');
+    const swipeImage = document.getElementById('swipeImage');
+    const swipePrevBtn = document.getElementById('swipePrevBtn');
+    const swipeNextBtn = document.getElementById('swipeNextBtn');
+    const swipeDownloadBtn = document.getElementById('swipeDownloadBtn');
+    const swipeShareBtn = document.getElementById('swipeShareBtn');
+    const swipeCloseBtn = document.getElementById('swipeCloseBtn');
 
     let selectedFiles = [];
     let selectedItem = null;
-    let lastExportBlob = null;
-    let lastExportUrl = '';
-    let lastExportFilename = 'chests-card.png';
     let isTemplateConfirmed = false;
+    let viewerIndex = 0;
     const historyStack = [];
-    const galleryItems = [];
-
-    function isMobileLike() {
-      return window.matchMedia('(max-width: 900px)').matches || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-    }
+    const generatedCards = [];
 
     function setStatus(text) {
       statusBox.textContent = text;
@@ -860,15 +846,6 @@
       return `rgba(${r}, ${g}, ${b}, ${alpha})`;
     }
 
-    function readFileAsDataURL(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-    }
-
     function applyAccentColor(hex) {
       const glow = hexToRgba(hex, 0.22);
       slot1.style.borderColor = hex;
@@ -879,6 +856,15 @@
         badge.style.borderColor = hex;
         badge.style.background = hex;
         badge.style.boxShadow = 'none';
+      });
+    }
+
+    function readFileAsDataURL(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
       });
     }
 
@@ -935,7 +921,7 @@
       });
 
       return {
-        version: 10,
+        version: 11,
         title: (titleInput.value || '').trim() || 'СУНДУКИ',
         bgImage: bgImage.style.display === 'block' ? bgImage.src : null,
         accentColor: accentColorInput.value,
@@ -1232,29 +1218,6 @@
       setStatus('Объект удалён.');
     }
 
-    function cleanupExportUrl() {
-      if (lastExportUrl) {
-        URL.revokeObjectURL(lastExportUrl);
-        lastExportUrl = '';
-      }
-      lastExportBlob = null;
-    }
-
-    function showExportModal(blob, filename) {
-      cleanupExportUrl();
-      lastExportBlob = blob;
-      lastExportFilename = filename;
-      lastExportUrl = URL.createObjectURL(blob);
-      exportPreviewImage.src = lastExportUrl;
-      exportModal.classList.add('open');
-      exportModal.setAttribute('aria-hidden', 'false');
-    }
-
-    function hideExportModal() {
-      exportModal.classList.remove('open');
-      exportModal.setAttribute('aria-hidden', 'true');
-    }
-
     async function renderPosterBlob() {
       const hadSelection = selectedItem;
       document.querySelectorAll('.overlay-item.selected').forEach(el => el.classList.remove('selected'));
@@ -1285,80 +1248,99 @@
         setStatus('Браузер заблокировал открытие нового окна.');
         return;
       }
-      win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>PNG</title><style>html,body{margin:0;background:#000;height:100%;display:grid;place-items:center;}img{max-width:100%;height:auto;display:block;}button{position:fixed;top:12px;left:12px;padding:10px 14px;border:none;border-radius:12px;background:#fff;color:#000;font-weight:700;}</style></head><body><button onclick="history.back()">Назад</button><img src="${dataUrl}" alt="PNG"></body></html>`);
+      win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>PNG</title><style>html,body{margin:0;background:#000;height:100%;display:grid;place-items:center;}img{max-width:100%;max-height:100vh;height:auto;display:block;}</style></head><body><img src="${dataUrl}" alt="PNG"></body></html>`);
       win.document.close();
     }
 
-    async function exportPosterPNG(filename = 'chests-card.png', useMobileModal = null) {
-      const blob = await renderPosterBlob();
-      if (!blob) throw new Error('Не удалось создать PNG');
-      const mobileMode = useMobileModal ?? isMobileLike();
-      if (mobileMode) {
-        showExportModal(blob, filename);
-        return blob;
-      }
+    function downloadBlob(blob, filename) {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
       link.download = filename;
       link.click();
       setTimeout(() => URL.revokeObjectURL(url), 1500);
-      return blob;
     }
 
     function saveTemplate() {
       const state = getCurrentState();
       const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = 'pkxd-chests-template.json';
-      link.click();
-      URL.revokeObjectURL(link.href);
+      downloadBlob(blob, 'pkxd-chests-template.json');
       setStatus('Шаблон сохранён.');
     }
 
-    function clearResults() {
-      galleryItems.forEach(item => {
+    function clearGeneratedCards() {
+      generatedCards.forEach(item => {
         try { URL.revokeObjectURL(item.url); } catch (_) {}
       });
-      galleryItems.length = 0;
-      resultsGrid.innerHTML = '';
-      resultsPanel.style.display = 'none';
+      generatedCards.length = 0;
+      viewerGrid.innerHTML = '';
+      viewerShell.style.display = 'none';
+      builderPanel.style.display = 'block';
+      viewerIndex = 0;
     }
 
-    async function addResultCard(blob, filename) {
-      const url = URL.createObjectURL(blob);
-      galleryItems.push({ blob, url, filename });
-      const idx = galleryItems.length - 1;
-      resultsPanel.style.display = 'block';
-
-      const card = document.createElement('div');
-      card.className = 'result-card';
-      card.innerHTML = `
-        <img src="${url}" alt="${filename}">
-        <div class="result-actions">
+    function buildViewerCard(card, index) {
+      const el = document.createElement('div');
+      el.className = 'viewer-card';
+      el.innerHTML = `
+        <img src="${card.url}" alt="${card.filename}" draggable="false">
+        <div class="viewer-actions">
           <button class="btn" data-action="open">Открыть</button>
           <button class="btn" data-action="download">Скачать</button>
           <button class="btn" data-action="share">Поделиться</button>
         </div>
       `;
 
-      card.querySelector('[data-action="open"]').addEventListener('click', async () => {
-        await openBlobInNewPage(galleryItems[idx].blob);
+      const img = el.querySelector('img');
+      let pressTimer = null;
+      let moved = false;
+      let startX = 0;
+      let startY = 0;
+
+      img.addEventListener('pointerdown', (e) => {
+        moved = false;
+        startX = e.clientX;
+        startY = e.clientY;
+        pressTimer = setTimeout(() => {
+          downloadBlob(card.blob, card.filename);
+          setStatus(`Скачано: ${card.filename}`);
+          pressTimer = null;
+        }, 520);
       });
-      card.querySelector('[data-action="download"]').addEventListener('click', () => {
-        const link = document.createElement('a');
-        link.href = galleryItems[idx].url;
-        link.download = galleryItems[idx].filename;
-        link.click();
+
+      img.addEventListener('pointermove', (e) => {
+        if (Math.abs(e.clientX - startX) > 8 || Math.abs(e.clientY - startY) > 8) {
+          moved = true;
+          if (pressTimer) {
+            clearTimeout(pressTimer);
+            pressTimer = null;
+          }
+        }
       });
-      card.querySelector('[data-action="share"]').addEventListener('click', async () => {
+
+      function cancelPress() {
+        if (pressTimer) {
+          clearTimeout(pressTimer);
+          pressTimer = null;
+        }
+      }
+
+      img.addEventListener('pointerup', () => {
+        if (!moved) openSwipeViewer(index);
+        cancelPress();
+      });
+      img.addEventListener('pointercancel', cancelPress);
+      img.addEventListener('pointerleave', cancelPress);
+
+      el.querySelector('[data-action="open"]').addEventListener('click', () => openSwipeViewer(index));
+      el.querySelector('[data-action="download"]').addEventListener('click', () => downloadBlob(card.blob, card.filename));
+      el.querySelector('[data-action="share"]').addEventListener('click', async () => {
         try {
-          const file = new File([galleryItems[idx].blob], galleryItems[idx].filename, { type: 'image/png' });
+          const file = new File([card.blob], card.filename, { type: 'image/png' });
           if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            await navigator.share({ files: [file], title: galleryItems[idx].filename });
+            await navigator.share({ files: [file], title: card.filename });
           } else if (navigator.share) {
-            await navigator.share({ title: galleryItems[idx].filename, url: galleryItems[idx].url });
+            await navigator.share({ title: card.filename, url: card.url });
           } else {
             setStatus('Поделиться в этом браузере не поддерживается.');
           }
@@ -1367,26 +1349,31 @@
         }
       });
 
-      resultsGrid.appendChild(card);
+      return el;
     }
 
-    async function downloadAllResults() {
-      if (!galleryItems.length) {
-        setStatus('Сначала собери пары.');
+    function renderViewer() {
+      viewerGrid.innerHTML = '';
+      generatedCards.forEach((card, index) => {
+        viewerGrid.appendChild(buildViewerCard(card, index));
+      });
+      builderPanel.style.display = 'none';
+      viewerShell.style.display = 'grid';
+    }
+
+    async function downloadAllGenerated() {
+      if (!generatedCards.length) {
+        setStatus('Сначала собери карточки.');
         return;
       }
-      for (let i = 0; i < galleryItems.length; i++) {
-        const item = galleryItems[i];
-        const link = document.createElement('a');
-        link.href = item.url;
-        link.download = item.filename;
-        link.click();
+      for (let i = 0; i < generatedCards.length; i++) {
+        downloadBlob(generatedCards[i].blob, generatedCards[i].filename);
         await new Promise(r => setTimeout(r, 180));
       }
-      setStatus(`Скачивание запущено. Файлов: ${galleryItems.length}.`);
+      setStatus(`Скачивание запущено. Файлов: ${generatedCards.length}.`);
     }
 
-    async function collectAllPairs(files) {
+    async function collectAllCards(files) {
       if (!files.length) {
         setStatus('Сначала выбери фотографии.');
         return;
@@ -1399,7 +1386,7 @@
 
       generateBtn.disabled = true;
       downloadAllBtn.disabled = true;
-      clearResults();
+      clearGeneratedCards();
 
       try {
         for (let i = 0; i < pairsCount; i++) {
@@ -1411,9 +1398,11 @@
           setSlotImage(slot2Photo, srcB);
           await new Promise(r => setTimeout(r, 40));
           const blob = await renderPosterBlob();
-          await addResultCard(blob, `chests-card-${i + 1}.png`);
+          const url = URL.createObjectURL(blob);
+          generatedCards.push({ blob, url, filename: `chests-card-${i + 1}.png` });
         }
-        setStatus(`Готово. Пары собраны: ${pairsCount}.` + (files.length % 2 ? ' Последнее фото пропущено.' : ''));
+        renderViewer();
+        setStatus(`Готово. Карточек собрано: ${pairsCount}.` + (files.length % 2 ? ' Последнее фото пропущено.' : ''));
       } catch (err) {
         console.error(err);
         setStatus('Ошибка при сборке карточек.');
@@ -1421,6 +1410,31 @@
         generateBtn.disabled = false;
         downloadAllBtn.disabled = false;
       }
+    }
+
+    function openSwipeViewer(index) {
+      if (!generatedCards.length) return;
+      viewerIndex = Math.max(0, Math.min(index, generatedCards.length - 1));
+      swipeImage.src = generatedCards[viewerIndex].url;
+      swipeModal.classList.add('open');
+      swipeModal.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeSwipeViewer() {
+      swipeModal.classList.remove('open');
+      swipeModal.setAttribute('aria-hidden', 'true');
+    }
+
+    function showPrevCard() {
+      if (!generatedCards.length) return;
+      viewerIndex = (viewerIndex - 1 + generatedCards.length) % generatedCards.length;
+      swipeImage.src = generatedCards[viewerIndex].url;
+    }
+
+    function showNextCard() {
+      if (!generatedCards.length) return;
+      viewerIndex = (viewerIndex + 1) % generatedCards.length;
+      swipeImage.src = generatedCards[viewerIndex].url;
     }
 
     document.addEventListener('click', (e) => {
@@ -1572,9 +1586,8 @@
       selectedFiles = [];
       photosInput.value = '';
       historyStack.length = 0;
-      clearResults();
-      cleanupExportUrl();
-      hideExportModal();
+      clearGeneratedCards();
+      closeSwipeViewer();
       setTemplateLockState(false);
       setStatus('Сброшено к базовому виду.');
     });
@@ -1590,7 +1603,7 @@
     });
 
     generateBtn.addEventListener('click', async () => {
-      await collectAllPairs(selectedFiles);
+      await collectAllCards(selectedFiles);
     });
 
     downloadAllBtn.addEventListener('click', async () => {
@@ -1598,42 +1611,39 @@
         setStatus('Сначала выбери фотографии.');
         return;
       }
-      if (!galleryItems.length) {
-        await collectAllPairs(selectedFiles);
+      if (!generatedCards.length) {
+        await collectAllCards(selectedFiles);
       }
-      await downloadAllResults();
+      await downloadAllGenerated();
     });
 
-    resultsDownloadAllBtn.addEventListener('click', async () => {
-      await downloadAllResults();
+    viewerBackBtn.addEventListener('click', () => {
+      viewerShell.style.display = 'none';
+      builderPanel.style.display = 'block';
+      setStatus('Возврат к шаблону.');
     });
 
-    resultsClearBtn.addEventListener('click', () => {
-      clearResults();
-      setStatus('Готовые пары очищены.');
+    viewerDownloadAllBtn.addEventListener('click', async () => {
+      await downloadAllGenerated();
     });
 
-    exportOpenBtn.addEventListener('click', async () => {
-      if (!lastExportBlob) return;
-      await openBlobInNewPage(lastExportBlob);
+    swipePrevBtn.addEventListener('click', showPrevCard);
+    swipeNextBtn.addEventListener('click', showNextCard);
+    swipeCloseBtn.addEventListener('click', closeSwipeViewer);
+    swipeDownloadBtn.addEventListener('click', () => {
+      if (!generatedCards.length) return;
+      const card = generatedCards[viewerIndex];
+      downloadBlob(card.blob, card.filename);
     });
-
-    exportDownloadBtn.addEventListener('click', () => {
-      if (!lastExportUrl) return;
-      const link = document.createElement('a');
-      link.href = lastExportUrl;
-      link.download = lastExportFilename;
-      link.click();
-    });
-
-    exportShareBtn.addEventListener('click', async () => {
-      if (!lastExportBlob) return;
+    swipeShareBtn.addEventListener('click', async () => {
+      if (!generatedCards.length) return;
+      const card = generatedCards[viewerIndex];
       try {
-        const file = new File([lastExportBlob], lastExportFilename, { type: 'image/png' });
+        const file = new File([card.blob], card.filename, { type: 'image/png' });
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          await navigator.share({ files: [file], title: lastExportFilename });
+          await navigator.share({ files: [file], title: card.filename });
         } else if (navigator.share) {
-          await navigator.share({ title: lastExportFilename, url: lastExportUrl });
+          await navigator.share({ title: card.filename, url: card.url });
         } else {
           setStatus('Поделиться в этом браузере не поддерживается.');
         }
@@ -1642,12 +1652,21 @@
       }
     });
 
-    exportCloseBtn.addEventListener('click', () => {
-      hideExportModal();
-    });
+    let swipeStartX = null;
+    swipeImage.addEventListener('touchstart', (e) => {
+      if (!e.touches.length) return;
+      swipeStartX = e.touches[0].clientX;
+    }, { passive: true });
+    swipeImage.addEventListener('touchend', (e) => {
+      if (swipeStartX === null || !e.changedTouches.length) return;
+      const dx = e.changedTouches[0].clientX - swipeStartX;
+      if (dx > 50) showPrevCard();
+      else if (dx < -50) showNextCard();
+      swipeStartX = null;
+    }, { passive: true });
 
-    exportModal.addEventListener('click', (e) => {
-      if (e.target === exportModal) hideExportModal();
+    swipeModal.addEventListener('click', (e) => {
+      if (e.target === swipeModal) closeSwipeViewer();
     });
 
     restoreFromState(DEFAULT_STATE);

@@ -541,7 +541,7 @@
       </div>
       <input id="objectInput" type="file" accept="image/*" multiple />
       <input id="watermarkInput" type="file" accept="image/*" />
-      <div class="hint">ПК: перетаскивание мышкой, колесо — масштаб, Shift + колесо — поворот, двойной клик — удалить. Телефон: объект двигается пальцем. Объекты можно редактировать и за окнами, и поверх всего.</div>
+      <div class="hint">ПК: перетаскивание мышкой, колесо — масштаб, Shift + колесо — поворот, двойной клик — удалить. Телефон: один палец — двигать, два пальца — увеличивать и поворачивать. Объекты можно редактировать и за окнами, и поверх всего.</div>
     </div>
 
     <div class="group">
@@ -573,7 +573,7 @@
   </aside>
 
   <section class="workspace">
-    <div class="mobile-note">На телефоне интерфейс тоже в две колонки: слева кнопки, справа шаблон. Управление объектом — через меню с тремя точками на самом объекте.</div>
+    <div class="mobile-note">На телефоне: один палец двигает объект, два пальца меняют размер и поворот. Меню с тремя точками осталось.</div>
 
     <div class="canvas-wrap">
       <div class="preview-shell">
@@ -610,7 +610,7 @@
 
   <script>
     const DEFAULT_STATE = {
-      version: 5,
+      version: 6,
       title: 'СУНДУКИ',
       bgImage: null,
       accentColor: '#1edbff',
@@ -739,6 +739,23 @@
       };
     }
 
+    function distance(p1, p2) {
+      const dx = p2.x - p1.x;
+      const dy = p2.y - p1.y;
+      return Math.hypot(dx, dy);
+    }
+
+    function angle(p1, p2) {
+      return Math.atan2(p2.y - p1.y, p2.x - p1.x) * 180 / Math.PI;
+    }
+
+    function midPoint(p1, p2) {
+      return {
+        x: (p1.x + p2.x) / 2,
+        y: (p1.y + p2.y) / 2
+      };
+    }
+
     function getCurrentState() {
       const overlayItems = Array.from(document.querySelectorAll('.overlay-item')).map(item => {
         const img = item.querySelector('img');
@@ -755,7 +772,7 @@
       });
 
       return {
-        version: 5,
+        version: 6,
         title: (titleInput.value || '').trim() || 'СУНДУКИ',
         bgImage: bgImage.style.display === 'block' ? bgImage.src : null,
         accentColor: accentColorInput.value,
@@ -864,47 +881,113 @@
     }
 
     function enableDragAndScale(item) {
-      let activePointerId = null;
-      let startPointer = { x: 0, y: 0 };
-      let startPos = { left: 0, top: 0 };
-      let moved = false;
+      const activePointers = new Map();
+      let mode = 'idle';
+      let startSingle = null;
+      let startMulti = null;
+
+      function pointerPoint(e) {
+        return getPosterRelativePoint(e.clientX, e.clientY);
+      }
 
       item.addEventListener('pointerdown', (e) => {
         if (e.target.closest('.item-menu')) return;
         e.preventDefault();
         e.stopPropagation();
-        activePointerId = e.pointerId;
-        item.setPointerCapture(activePointerId);
-        item.classList.add('dragging');
+        item.setPointerCapture(e.pointerId);
+        activePointers.set(e.pointerId, pointerPoint(e));
         setSelectedItem(item);
-        moved = false;
-        startPointer = getPosterRelativePoint(e.clientX, e.clientY);
-        startPos = {
-          left: parseFloat(item.style.left || '0'),
-          top: parseFloat(item.style.top || '0')
-        };
+
+        if (activePointers.size === 1) {
+          mode = 'drag';
+          item.classList.add('dragging');
+          startSingle = {
+            pointer: pointerPoint(e),
+            left: parseFloat(item.style.left || '0'),
+            top: parseFloat(item.style.top || '0')
+          };
+        } else if (activePointers.size === 2) {
+          saveHistory();
+          mode = 'gesture';
+          item.classList.remove('dragging');
+          const pts = Array.from(activePointers.values());
+          const mid = midPoint(pts[0], pts[1]);
+          startMulti = {
+            distance: distance(pts[0], pts[1]),
+            angle: angle(pts[0], pts[1]),
+            center: mid,
+            left: parseFloat(item.style.left || '0'),
+            top: parseFloat(item.style.top || '0'),
+            scale: parseFloat(item.dataset.scale || '1'),
+            rotate: parseFloat(item.dataset.rotate || '0')
+          };
+        }
       });
 
       item.addEventListener('pointermove', (e) => {
-        if (activePointerId !== e.pointerId) return;
-        const p = getPosterRelativePoint(e.clientX, e.clientY);
-        const dx = p.x - startPointer.x;
-        const dy = p.y - startPointer.y;
-        if (Math.abs(dx) > 1 || Math.abs(dy) > 1) moved = true;
-        item.style.left = (startPos.left + dx) + 'px';
-        item.style.top = (startPos.top + dy) + 'px';
+        if (!activePointers.has(e.pointerId)) return;
+        activePointers.set(e.pointerId, pointerPoint(e));
+
+        if (mode === 'drag' && activePointers.size === 1 && startSingle) {
+          const current = activePointers.get(e.pointerId);
+          const dx = current.x - startSingle.pointer.x;
+          const dy = current.y - startSingle.pointer.y;
+          item.style.left = (startSingle.left + dx) + 'px';
+          item.style.top = (startSingle.top + dy) + 'px';
+          return;
+        }
+
+        if (mode === 'gesture' && activePointers.size >= 2 && startMulti) {
+          const pts = Array.from(activePointers.values()).slice(0, 2);
+          const newDistance = distance(pts[0], pts[1]);
+          const newAngle = angle(pts[0], pts[1]);
+          const newCenter = midPoint(pts[0], pts[1]);
+
+          const scaleRatio = newDistance / Math.max(startMulti.distance, 0.001);
+          const newScale = Math.max(0.15, Math.min(6, startMulti.scale * scaleRatio));
+          const angleDelta = newAngle - startMulti.angle;
+
+          item.dataset.scale = String(newScale);
+          item.dataset.rotate = String(startMulti.rotate + angleDelta);
+          applyTransform(item);
+
+          item.style.left = (startMulti.left + (newCenter.x - startMulti.center.x)) + 'px';
+          item.style.top = (startMulti.top + (newCenter.y - startMulti.center.y)) + 'px';
+        }
       });
 
       function finishPointer(e) {
-        if (activePointerId !== e.pointerId) return;
-        item.releasePointerCapture(activePointerId);
-        activePointerId = null;
-        item.classList.remove('dragging');
-        if (moved) saveHistory();
+        if (!activePointers.has(e.pointerId)) return;
+        activePointers.delete(e.pointerId);
+        try { item.releasePointerCapture(e.pointerId); } catch (_) {}
+
+        if (mode === 'drag') {
+          saveHistory();
+        } else if (mode === 'gesture') {
+          saveHistory();
+        }
+
+        if (activePointers.size === 1) {
+          const remaining = Array.from(activePointers.values())[0];
+          mode = 'drag';
+          item.classList.add('dragging');
+          startSingle = {
+            pointer: remaining,
+            left: parseFloat(item.style.left || '0'),
+            top: parseFloat(item.style.top || '0')
+          };
+          startMulti = null;
+        } else {
+          mode = 'idle';
+          item.classList.remove('dragging');
+          startSingle = null;
+          startMulti = null;
+        }
       }
 
       item.addEventListener('pointerup', finishPointer);
       item.addEventListener('pointercancel', finishPointer);
+      item.addEventListener('pointerleave', finishPointer);
 
       item.addEventListener('wheel', (e) => {
         e.preventDefault();

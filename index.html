@@ -314,6 +314,7 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
+      object-position: center center;
       display: none;
       z-index: 1;
     }
@@ -672,6 +673,7 @@
       <div class="row-2">
         <button id="saveCurrentBtn" class="btn">Сохранить превью</button>
         <button id="generateBtn" class="btn primary">Собрать все карточки</button>
+      <button id="downloadAllBtn" class="btn">Скачать все пары</button>
       </div>
       <div class="hint">После подтверждения шаблона редактирование блокируется, и можно спокойно работать только с фото.</div>
     </div>
@@ -779,6 +781,7 @@
     const previewPairBtn = document.getElementById('previewPairBtn');
     const previewAllBtn = document.getElementById('previewAllBtn');
     const saveCurrentBtn = document.getElementById('saveCurrentBtn');
+    const downloadAllBtn = document.getElementById('downloadAllBtn');
     const poster = document.getElementById('poster');
     const statusBox = document.getElementById('status');
     const slot1Photo = document.getElementById('slot1Photo');
@@ -809,6 +812,7 @@
     let isTemplateConfirmed = false;
     const historyStack = [];
     const galleryItems = [];
+    let currentBatchZipCounter = 1;
 
     function isMobileLike() {
       return window.matchMedia('(max-width: 900px)').matches || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
@@ -1371,6 +1375,24 @@
       galleryGrid.appendChild(card);
     }
 
+    async function downloadAllPairsIndividually() {
+      if (!galleryItems.length) {
+        setStatus('Сначала собери пары.');
+        return;
+      }
+
+      for (let i = 0; i < galleryItems.length; i++) {
+        const item = galleryItems[i];
+        const link = document.createElement('a');
+        link.href = item.url;
+        link.download = item.filename;
+        link.click();
+        await new Promise(r => setTimeout(r, 180));
+      }
+
+      setStatus(`Скачивание запущено. Файлов: ${galleryItems.length}.`);
+    }
+
     function showGallery() {
       galleryModal.classList.add('open');
       galleryModal.setAttribute('aria-hidden', 'false');
@@ -1381,7 +1403,7 @@
       galleryModal.setAttribute('aria-hidden', 'true');
     }
 
-    async function generateCardsFromFiles(files, openAllGallery = false) {
+    async function generateCardsFromFiles(files, openAllGallery = false, forceCollectAll = false) {
       if (!files.length) {
         setStatus('Сначала выбери фотографии.');
         return;
@@ -1397,9 +1419,12 @@
       previewPairBtn.disabled = true;
       previewAllBtn.disabled = true;
       saveCurrentBtn.disabled = true;
+      downloadAllBtn.disabled = true;
       clearGallery();
 
       try {
+        const shouldCollectAll = openAllGallery || forceCollectAll || !isMobileLike();
+
         for (let i = 0; i < pairsCount; i++) {
           setStatus(`Сборка карточки ${i + 1} из ${pairsCount}...`);
           const a = files[i * 2];
@@ -1409,22 +1434,24 @@
           setSlotImage(slot2Photo, srcB);
           await new Promise(r => setTimeout(r, 40));
 
-          if (openAllGallery) {
+          if (shouldCollectAll) {
             const blob = await renderPosterBlob();
             await addGalleryItem(blob, `chests-card-${i + 1}.png`);
           } else {
-            await exportPosterPNG(`chests-card-${i + 1}.png`, isMobileLike());
-            if (isMobileLike()) break;
+            await exportPosterPNG(`chests-card-${i + 1}.png`, true);
+            break;
           }
         }
 
-        if (openAllGallery) {
-          showGallery();
-          setStatus(`Готово. Показаны все пары: ${pairsCount}.` + (files.length % 2 ? ' Последнее фото пропущено.' : ''));
-        } else if (isMobileLike()) {
-          setStatus('Готово. Открыт экран с первой готовой картинкой.');
+        if (shouldCollectAll) {
+          if (openAllGallery || isMobileLike()) {
+            showGallery();
+          } else {
+            await downloadAllPairsIndividually();
+          }
+          setStatus(`Готово. Пары собраны: ${pairsCount}.` + (files.length % 2 ? ' Последнее фото пропущено.' : ''));
         } else {
-          setStatus(`Готово. Карточек собрано: ${pairsCount}.` + (files.length % 2 ? ' Последнее фото пропущено.' : ''));
+          setStatus('Готово. Открыт экран с первой готовой картинкой.');
         }
       } catch (err) {
         console.error(err);
@@ -1434,6 +1461,7 @@
         previewPairBtn.disabled = false;
         previewAllBtn.disabled = false;
         saveCurrentBtn.disabled = false;
+        downloadAllBtn.disabled = false;
       }
     }
 
@@ -1624,11 +1652,19 @@
     });
 
     previewAllBtn.addEventListener('click', async () => {
-      await generateCardsFromFiles(selectedFiles, true);
+      await generateCardsFromFiles(selectedFiles, true, true);
     });
 
     generateBtn.addEventListener('click', async () => {
-      await generateCardsFromFiles(selectedFiles, false);
+      await generateCardsFromFiles(selectedFiles, false, !isMobileLike());
+    });
+
+    downloadAllBtn.addEventListener('click', async () => {
+      if (!selectedFiles.length) {
+        setStatus('Сначала выбери фотографии.');
+        return;
+      }
+      await generateCardsFromFiles(selectedFiles, false, true);
     });
 
     saveCurrentBtn.addEventListener('click', async () => {

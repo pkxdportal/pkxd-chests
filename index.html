@@ -123,12 +123,12 @@
     }
 
     .btn.ok {
-      background: linear-gradient(180deg, rgba(61, 255, 156, .42), rgba(12, 152, 95, .30));
+      background: linear-gradient(180deg, rgba(61,255,156,.42), rgba(12,152,95,.30));
       border-color: rgba(115,255,186,.25);
     }
 
     .btn.warn {
-      background: linear-gradient(180deg, rgba(255, 187, 61, .42), rgba(183, 102, 10, .30));
+      background: linear-gradient(180deg, rgba(255,187,61,.42), rgba(183,102,10,.30));
       border-color: rgba(255,207,138,.25);
     }
 
@@ -192,7 +192,7 @@
       color: rgba(255,255,255,.72);
     }
 
-    .status {
+    .status, .lock-state {
       padding: 10px 12px;
       border-radius: 12px;
       background: rgba(255,255,255,.08);
@@ -419,9 +419,7 @@
       line-height: 1;
     }
 
-    .overlay-item.selected .item-menu-btn {
-      display: flex;
-    }
+    .overlay-item.selected .item-menu-btn { display: flex; }
 
     .item-menu-panel {
       position: absolute;
@@ -466,8 +464,7 @@
       line-height: 1.35;
     }
 
-    .export-modal,
-    .gallery-modal {
+    .export-modal {
       position: fixed;
       inset: 0;
       z-index: 1000;
@@ -479,12 +476,10 @@
       backdrop-filter: blur(8px);
     }
 
-    .export-modal.open,
-    .gallery-modal.open { display: flex; }
+    .export-modal.open { display: flex; }
 
-    .export-card,
-    .gallery-card {
-      width: min(92vw, 760px);
+    .export-card {
+      width: min(92vw, 560px);
       max-height: 90vh;
       overflow: auto;
       background: rgba(10, 21, 56, 0.96);
@@ -494,15 +489,13 @@
       padding: 16px;
     }
 
-    .export-card h2,
-    .gallery-card h2 {
+    .export-card h2 {
       margin: 0 0 8px;
       font-size: 20px;
       font-weight: 900;
     }
 
-    .export-card p,
-    .gallery-card p {
+    .export-card p {
       margin: 0 0 12px;
       color: rgba(255,255,255,0.76);
       font-size: 13px;
@@ -529,14 +522,38 @@
       gap: 10px;
     }
 
-    .gallery-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-      gap: 12px;
-      margin-top: 12px;
+    .results-panel {
+      display: none;
+      width: min(100%, 1120px);
     }
 
-    .gallery-item {
+    .results-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .results-title {
+      font-size: 20px;
+      font-weight: 900;
+      margin-bottom: 4px;
+    }
+
+    .results-subtitle {
+      font-size: 13px;
+      color: rgba(255,255,255,.72);
+    }
+
+    .results-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 12px;
+    }
+
+    .result-card {
       background: rgba(255,255,255,0.05);
       border: 1px solid rgba(255,255,255,0.10);
       border-radius: 14px;
@@ -546,7 +563,7 @@
       gap: 8px;
     }
 
-    .gallery-item img {
+    .result-card img {
       display: block;
       width: 100%;
       height: auto;
@@ -554,18 +571,9 @@
       background: rgba(255,255,255,0.04);
     }
 
-    .gallery-actions {
+    .result-actions {
       display: grid;
       gap: 6px;
-    }
-
-    .lock-state {
-      padding: 10px 12px;
-      border-radius: 12px;
-      background: rgba(255,255,255,.08);
-      border: 1px solid rgba(255,255,255,.10);
-      font-size: 13px;
-      line-height: 1.35;
     }
 
     @media (max-width: 1240px) {
@@ -602,7 +610,7 @@
         -webkit-text-stroke: 8px rgba(0,0,0,0.40);
       }
 
-      .gallery-grid {
+      .results-grid {
         grid-template-columns: 1fr;
       }
     }
@@ -618,7 +626,7 @@
       <input id="titleInput" type="text" value="СУНДУКИ" placeholder="Заголовок" />
       <div class="row-2">
         <label id="bgLabel" class="file-label" for="bgInput">Выбрать фон</label>
-        <label id="templateLabel" class="file-label" for="templateInput">Загрузить шаблон</label>
+        <label class="file-label" for="templateInput">Загрузить шаблон</label>
       </div>
       <input id="bgInput" type="file" accept="image/*" />
       <input id="templateInput" type="file" accept=".json,application/json" />
@@ -667,15 +675,10 @@
       <label class="file-label" for="photosInput">Выбрать фото</label>
       <input id="photosInput" type="file" accept="image/*" multiple />
       <div class="row-2">
-        <button id="previewPairBtn" class="btn">Показать 1-ю пару</button>
-        <button id="previewAllBtn" class="btn">Показать все пары</button>
-      </div>
-      <div class="row-2">
-        <button id="saveCurrentBtn" class="btn">Сохранить превью</button>
         <button id="generateBtn" class="btn primary">Собрать все карточки</button>
-      <button id="downloadAllBtn" class="btn">Скачать все пары</button>
+        <button id="downloadAllBtn" class="btn">Скачать все пары</button>
       </div>
-      <div class="hint">После подтверждения шаблона редактирование блокируется, и можно спокойно работать только с фото.</div>
+      <div class="hint">Готовые пары появляются прямо справа под шаблоном. Там же можно скачать все сразу или по одной.</div>
     </div>
 
     <div class="group">
@@ -718,12 +721,26 @@
         </div>
       </div>
     </div>
+
+    <div id="resultsPanel" class="canvas-wrap results-panel">
+      <div class="results-head">
+        <div>
+          <div class="results-title">Готовые пары</div>
+          <div class="results-subtitle">Карточки появляются прямо здесь. Можно скачать все сразу или по одной.</div>
+        </div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <button id="resultsDownloadAllBtn" class="btn">Скачать все</button>
+          <button id="resultsClearBtn" class="btn">Очистить пары</button>
+        </div>
+      </div>
+      <div id="resultsGrid" class="results-grid"></div>
+    </div>
   </section>
 
   <div id="exportModal" class="export-modal" aria-hidden="true">
     <div class="export-card">
       <h2>Готовое изображение</h2>
-      <p>На телефоне кнопка «Открыть изображение» теперь открывает новую страницу с самим PNG. Там можно сохранить картинку через браузер.</p>
+      <p>На телефоне кнопка «Открыть изображение» открывает отдельную страницу с самим PNG. Там можно сохранить картинку через браузер.</p>
       <div class="export-preview">
         <img id="exportPreviewImage" alt="Готовый PNG" />
       </div>
@@ -736,20 +753,9 @@
     </div>
   </div>
 
-  <div id="galleryModal" class="gallery-modal" aria-hidden="true">
-    <div class="gallery-card">
-      <h2>Все пары</h2>
-      <p>Здесь показываются все готовые пары. Можно листать, открыть, скачать или поделиться каждой картинкой отдельно.</p>
-      <div id="galleryGrid" class="gallery-grid"></div>
-      <div style="margin-top:12px;">
-        <button id="galleryCloseBtn" class="btn">Закрыть</button>
-      </div>
-    </div>
-  </div>
-
   <script>
     const DEFAULT_STATE = {
-      version: 9,
+      version: 10,
       title: 'СУНДУКИ',
       bgImage: null,
       accentColor: '#1edbff',
@@ -767,7 +773,6 @@
     const bgThumb = document.getElementById('bgThumb');
     const bgThumbText = document.getElementById('bgThumbText');
     const bgLabel = document.getElementById('bgLabel');
-    const templateLabel = document.getElementById('templateLabel');
     const objectLabel = document.getElementById('objectLabel');
     const watermarkLabel = document.getElementById('watermarkLabel');
     const saveTemplateBtn = document.getElementById('saveTemplateBtn');
@@ -778,9 +783,6 @@
     const lockState = document.getElementById('lockState');
     const photosInput = document.getElementById('photosInput');
     const generateBtn = document.getElementById('generateBtn');
-    const previewPairBtn = document.getElementById('previewPairBtn');
-    const previewAllBtn = document.getElementById('previewAllBtn');
-    const saveCurrentBtn = document.getElementById('saveCurrentBtn');
     const downloadAllBtn = document.getElementById('downloadAllBtn');
     const poster = document.getElementById('poster');
     const statusBox = document.getElementById('status');
@@ -800,9 +802,10 @@
     const exportDownloadBtn = document.getElementById('exportDownloadBtn');
     const exportShareBtn = document.getElementById('exportShareBtn');
     const exportCloseBtn = document.getElementById('exportCloseBtn');
-    const galleryModal = document.getElementById('galleryModal');
-    const galleryGrid = document.getElementById('galleryGrid');
-    const galleryCloseBtn = document.getElementById('galleryCloseBtn');
+    const resultsPanel = document.getElementById('resultsPanel');
+    const resultsGrid = document.getElementById('resultsGrid');
+    const resultsDownloadAllBtn = document.getElementById('resultsDownloadAllBtn');
+    const resultsClearBtn = document.getElementById('resultsClearBtn');
 
     let selectedFiles = [];
     let selectedItem = null;
@@ -812,7 +815,6 @@
     let isTemplateConfirmed = false;
     const historyStack = [];
     const galleryItems = [];
-    let currentBatchZipCounter = 1;
 
     function isMobileLike() {
       return window.matchMedia('(max-width: 900px)').matches || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
@@ -873,7 +875,6 @@
       slot2.style.borderColor = hex;
       slot1.style.boxShadow = `inset 0 1px 0 rgba(255,255,255,0.18), 0 10px 28px rgba(0,0,0,0.12), 0 0 24px ${glow}`;
       slot2.style.boxShadow = `inset 0 1px 0 rgba(255,255,255,0.18), 0 10px 28px rgba(0,0,0,0.12), 0 0 24px ${glow}`;
-
       [badge1, badge2].forEach((badge) => {
         badge.style.borderColor = hex;
         badge.style.background = hex;
@@ -934,7 +935,7 @@
       });
 
       return {
-        version: 9,
+        version: 10,
         title: (titleInput.value || '').trim() || 'СУНДУКИ',
         bgImage: bgImage.style.display === 'block' ? bgImage.src : null,
         accentColor: accentColorInput.value,
@@ -1005,12 +1006,10 @@
     function createMenu(item) {
       const menu = document.createElement('div');
       menu.className = 'item-menu';
-
       const btn = document.createElement('button');
       btn.className = 'item-menu-btn';
       btn.type = 'button';
       btn.textContent = '⋯';
-
       const panel = document.createElement('div');
       panel.className = 'item-menu-panel';
 
@@ -1046,7 +1045,6 @@
 
     function createOverlayItem(src, index = 0, saved = null, pushHistory = true) {
       if (pushHistory && !isTemplateConfirmed) saveHistory();
-
       const item = document.createElement('div');
       item.className = 'overlay-item';
       item.dataset.scale = String(saved?.scale ?? 1);
@@ -1065,7 +1063,6 @@
 
       const targetLayer = item.dataset.layer === 'back' ? overlayBack : overlayFront;
       targetLayer.appendChild(item);
-
       applyTransform(item);
       enableDragAndScale(item);
       setSelectedItem(item);
@@ -1146,15 +1143,12 @@
           const newDistance = distance(pts[0], pts[1]);
           const newAngle = angle(pts[0], pts[1]);
           const newCenter = midPoint(pts[0], pts[1]);
-
           const scaleRatio = newDistance / Math.max(startMulti.distance, 0.001);
           const newScale = Math.max(0.15, Math.min(6, startMulti.scale * scaleRatio));
           const angleDelta = newAngle - startMulti.angle;
-
           item.dataset.scale = String(newScale);
           item.dataset.rotate = String(startMulti.rotate + angleDelta);
           applyTransform(item);
-
           item.style.left = (startMulti.left + (newCenter.x - startMulti.center.x)) + 'px';
           item.style.top = (startMulti.top + (newCenter.y - startMulti.center.y)) + 'px';
         }
@@ -1265,35 +1259,14 @@
       const hadSelection = selectedItem;
       document.querySelectorAll('.overlay-item.selected').forEach(el => el.classList.remove('selected'));
       document.querySelectorAll('.item-menu').forEach(el => el.classList.remove('open'));
-
       const canvas = await html2canvas(poster, {
         scale: 2,
         useCORS: true,
         backgroundColor: null,
         logging: false
       });
-
       if (hadSelection && !isTemplateConfirmed) hadSelection.classList.add('selected');
       return await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
-    }
-
-    async function exportPosterPNG(filename = 'chests-card.png', useMobileModal = null) {
-      const blob = await renderPosterBlob();
-      if (!blob) throw new Error('Не удалось создать PNG');
-
-      const mobileMode = useMobileModal ?? isMobileLike();
-      if (mobileMode) {
-        showExportModal(blob, filename);
-        return blob;
-      }
-
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = filename;
-      link.click();
-      setTimeout(() => URL.revokeObjectURL(url), 1500);
-      return blob;
     }
 
     async function blobToDataUrl(blob) {
@@ -1316,6 +1289,23 @@
       win.document.close();
     }
 
+    async function exportPosterPNG(filename = 'chests-card.png', useMobileModal = null) {
+      const blob = await renderPosterBlob();
+      if (!blob) throw new Error('Не удалось создать PNG');
+      const mobileMode = useMobileModal ?? isMobileLike();
+      if (mobileMode) {
+        showExportModal(blob, filename);
+        return blob;
+      }
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1500);
+      return blob;
+    }
+
     function saveTemplate() {
       const state = getCurrentState();
       const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
@@ -1327,21 +1317,26 @@
       setStatus('Шаблон сохранён.');
     }
 
-    function clearGallery() {
+    function clearResults() {
+      galleryItems.forEach(item => {
+        try { URL.revokeObjectURL(item.url); } catch (_) {}
+      });
       galleryItems.length = 0;
-      galleryGrid.innerHTML = '';
+      resultsGrid.innerHTML = '';
+      resultsPanel.style.display = 'none';
     }
 
-    async function addGalleryItem(blob, filename) {
+    async function addResultCard(blob, filename) {
       const url = URL.createObjectURL(blob);
       galleryItems.push({ blob, url, filename });
       const idx = galleryItems.length - 1;
+      resultsPanel.style.display = 'block';
 
       const card = document.createElement('div');
-      card.className = 'gallery-item';
+      card.className = 'result-card';
       card.innerHTML = `
         <img src="${url}" alt="${filename}">
-        <div class="gallery-actions">
+        <div class="result-actions">
           <button class="btn" data-action="open">Открыть</button>
           <button class="btn" data-action="download">Скачать</button>
           <button class="btn" data-action="share">Поделиться</button>
@@ -1372,15 +1367,14 @@
         }
       });
 
-      galleryGrid.appendChild(card);
+      resultsGrid.appendChild(card);
     }
 
-    async function downloadAllPairsIndividually() {
+    async function downloadAllResults() {
       if (!galleryItems.length) {
         setStatus('Сначала собери пары.');
         return;
       }
-
       for (let i = 0; i < galleryItems.length; i++) {
         const item = galleryItems[i];
         const link = document.createElement('a');
@@ -1389,26 +1383,14 @@
         link.click();
         await new Promise(r => setTimeout(r, 180));
       }
-
       setStatus(`Скачивание запущено. Файлов: ${galleryItems.length}.`);
     }
 
-    function showGallery() {
-      galleryModal.classList.add('open');
-      galleryModal.setAttribute('aria-hidden', 'false');
-    }
-
-    function hideGallery() {
-      galleryModal.classList.remove('open');
-      galleryModal.setAttribute('aria-hidden', 'true');
-    }
-
-    async function generateCardsFromFiles(files, openAllGallery = false, forceCollectAll = false) {
+    async function collectAllPairs(files) {
       if (!files.length) {
         setStatus('Сначала выбери фотографии.');
         return;
       }
-
       const pairsCount = Math.floor(files.length / 2);
       if (pairsCount === 0) {
         setStatus('Нужно минимум 2 фото.');
@@ -1416,15 +1398,10 @@
       }
 
       generateBtn.disabled = true;
-      previewPairBtn.disabled = true;
-      previewAllBtn.disabled = true;
-      saveCurrentBtn.disabled = true;
       downloadAllBtn.disabled = true;
-      clearGallery();
+      clearResults();
 
       try {
-        const shouldCollectAll = openAllGallery || forceCollectAll || !isMobileLike();
-
         for (let i = 0; i < pairsCount; i++) {
           setStatus(`Сборка карточки ${i + 1} из ${pairsCount}...`);
           const a = files[i * 2];
@@ -1433,34 +1410,15 @@
           setSlotImage(slot1Photo, srcA);
           setSlotImage(slot2Photo, srcB);
           await new Promise(r => setTimeout(r, 40));
-
-          if (shouldCollectAll) {
-            const blob = await renderPosterBlob();
-            await addGalleryItem(blob, `chests-card-${i + 1}.png`);
-          } else {
-            await exportPosterPNG(`chests-card-${i + 1}.png`, true);
-            break;
-          }
+          const blob = await renderPosterBlob();
+          await addResultCard(blob, `chests-card-${i + 1}.png`);
         }
-
-        if (shouldCollectAll) {
-          if (openAllGallery || isMobileLike()) {
-            showGallery();
-          } else {
-            await downloadAllPairsIndividually();
-          }
-          setStatus(`Готово. Пары собраны: ${pairsCount}.` + (files.length % 2 ? ' Последнее фото пропущено.' : ''));
-        } else {
-          setStatus('Готово. Открыт экран с первой готовой картинкой.');
-        }
+        setStatus(`Готово. Пары собраны: ${pairsCount}.` + (files.length % 2 ? ' Последнее фото пропущено.' : ''));
       } catch (err) {
         console.error(err);
         setStatus('Ошибка при сборке карточек.');
       } finally {
         generateBtn.disabled = false;
-        previewPairBtn.disabled = false;
-        previewAllBtn.disabled = false;
-        saveCurrentBtn.disabled = false;
         downloadAllBtn.disabled = false;
       }
     }
@@ -1614,10 +1572,9 @@
       selectedFiles = [];
       photosInput.value = '';
       historyStack.length = 0;
+      clearResults();
       cleanupExportUrl();
       hideExportModal();
-      clearGallery();
-      hideGallery();
       setTemplateLockState(false);
       setStatus('Сброшено к базовому виду.');
     });
@@ -1632,31 +1589,8 @@
       setStatus(`Выбрано фото: ${selectedFiles.length}. Готовых пар: ${pairs}.` + (selectedFiles.length % 2 ? ' Последнее будет пропущено.' : ''));
     });
 
-    previewPairBtn.addEventListener('click', async () => {
-      if (selectedFiles.length < 2) {
-        setStatus('Для предпросмотра нужно минимум 2 фото.');
-        return;
-      }
-      try {
-        const [srcA, srcB] = await Promise.all([
-          readFileAsDataURL(selectedFiles[0]),
-          readFileAsDataURL(selectedFiles[1])
-        ]);
-        setSlotImage(slot1Photo, srcA);
-        setSlotImage(slot2Photo, srcB);
-        setStatus('Первая пара показана в шаблоне.');
-      } catch (err) {
-        console.error(err);
-        setStatus('Не удалось показать предпросмотр.');
-      }
-    });
-
-    previewAllBtn.addEventListener('click', async () => {
-      await generateCardsFromFiles(selectedFiles, true, true);
-    });
-
     generateBtn.addEventListener('click', async () => {
-      await generateCardsFromFiles(selectedFiles, false, !isMobileLike());
+      await collectAllPairs(selectedFiles);
     });
 
     downloadAllBtn.addEventListener('click', async () => {
@@ -1664,18 +1598,19 @@
         setStatus('Сначала выбери фотографии.');
         return;
       }
-      await generateCardsFromFiles(selectedFiles, false, true);
+      if (!galleryItems.length) {
+        await collectAllPairs(selectedFiles);
+      }
+      await downloadAllResults();
     });
 
-    saveCurrentBtn.addEventListener('click', async () => {
-      try {
-        setStatus('Сохраняю текущий просмотр...');
-        await exportPosterPNG('chests-current-preview.png', isMobileLike());
-        setStatus(isMobileLike() ? 'Открылся экран с готовым изображением.' : 'Текущий просмотр сохранён.');
-      } catch (err) {
-        console.error(err);
-        setStatus('Не удалось сохранить PNG.');
-      }
+    resultsDownloadAllBtn.addEventListener('click', async () => {
+      await downloadAllResults();
+    });
+
+    resultsClearBtn.addEventListener('click', () => {
+      clearResults();
+      setStatus('Готовые пары очищены.');
     });
 
     exportOpenBtn.addEventListener('click', async () => {
@@ -1713,14 +1648,6 @@
 
     exportModal.addEventListener('click', (e) => {
       if (e.target === exportModal) hideExportModal();
-    });
-
-    galleryCloseBtn.addEventListener('click', () => {
-      hideGallery();
-    });
-
-    galleryModal.addEventListener('click', (e) => {
-      if (e.target === galleryModal) hideGallery();
     });
 
     restoreFromState(DEFAULT_STATE);

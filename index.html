@@ -419,9 +419,7 @@
       line-height: 1;
     }
 
-    .overlay-item.selected .item-menu-btn {
-      display: flex;
-    }
+    .overlay-item.selected .item-menu-btn { display: flex; }
 
     .item-menu-panel {
       position: absolute;
@@ -468,8 +466,13 @@
 
     .viewer-shell {
       display: none;
-      width: min(100%, 1120px);
+      width: calc(var(--canvas-w) * 1px);
+      min-height: calc(var(--canvas-h) * 1px);
+      padding: 10px;
+      background: rgba(255,255,255,.04);
+      border-radius: 18px;
       gap: 12px;
+      align-content: start;
     }
 
     .viewer-head {
@@ -496,6 +499,8 @@
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 12px;
+      width: 100%;
+      align-content: start;
     }
 
     .viewer-card {
@@ -506,22 +511,20 @@
       padding: 8px;
       display: grid;
       gap: 8px;
+      align-content: start;
     }
 
     .viewer-card img {
       display: block;
       width: 100%;
-      height: auto;
+      aspect-ratio: 4 / 5;
+      object-fit: cover;
       border-radius: 10px;
       background: rgba(255,255,255,0.04);
       user-select: none;
       -webkit-user-drag: none;
       touch-action: manipulation;
-    }
-
-    .viewer-actions {
-      display: grid;
-      gap: 6px;
+      cursor: pointer;
     }
 
     .swipe-modal {
@@ -669,7 +672,7 @@
         <button id="generateBtn" class="btn primary">Собрать все карточки</button>
         <button id="downloadAllBtn" class="btn">Скачать все пары</button>
       </div>
-      <div class="hint">После сборки шаблон скрывается, а карточки появляются на его месте сеткой. На телефоне можно удержать карточку для скачивания и открыть просмотр со свайпами.</div>
+      <div class="hint">После сборки шаблон скрывается, а карточки появляются на его месте слева направо. Нажми на карточку для просмотра. Удержание на карточке скачивает её.</div>
     </div>
 
     <div class="group">
@@ -679,7 +682,7 @@
   </aside>
 
   <section class="workspace">
-    <div class="mobile-note">После сборки шаблон скрывается, а готовые карточки появляются на его месте. Нажми на карточку для просмотра, листай влево/вправо, удерживай для скачивания.</div>
+    <div class="mobile-note">После сборки шаблон скрывается, а готовые карточки появляются на его месте. Нажми на карточку для просмотра, листай стрелками или свайпом, удерживай для скачивания.</div>
 
     <div id="builderPanel" class="canvas-wrap">
       <div class="preview-shell">
@@ -717,7 +720,7 @@
       <div class="viewer-head">
         <div>
           <div class="viewer-title">Готовые карточки</div>
-          <div class="viewer-subtitle">Нажми на карточку для полного просмотра. Удержание на карточке откроет скачивание.</div>
+          <div class="viewer-subtitle">Карточки показаны прямо на месте шаблона. Нажатие открывает просмотрщик, удержание скачивает.</div>
         </div>
         <div style="display:flex; gap:10px; flex-wrap:wrap;">
           <button id="viewerBackBtn" class="btn">Назад к шаблону</button>
@@ -806,9 +809,7 @@
     const historyStack = [];
     const generatedCards = [];
 
-    function setStatus(text) {
-      statusBox.textContent = text;
-    }
+    function setStatus(text) { statusBox.textContent = text; }
 
     function setSlotImage(slotImg, src) {
       if (src) {
@@ -966,7 +967,6 @@
       overlayBack.innerHTML = '';
       overlayFront.innerHTML = '';
       setSelectedItem(null);
-
       titleInput.value = state?.title || 'СУНДУКИ';
       posterTitle.textContent = titleInput.value;
 
@@ -1041,12 +1041,10 @@
       item.style.top = (saved?.top ?? (90 + index * 24)) + 'px';
       item.style.width = (saved?.width ?? 160) + 'px';
       item.style.pointerEvents = isTemplateConfirmed ? 'none' : 'auto';
-
       const img = document.createElement('img');
       img.src = src;
       item.appendChild(img);
       item.appendChild(createMenu(item));
-
       const targetLayer = item.dataset.layer === 'back' ? overlayBack : overlayFront;
       targetLayer.appendChild(item);
       applyTransform(item);
@@ -1063,9 +1061,7 @@
       let gestureHistorySaved = false;
       let dragHistorySaved = false;
 
-      function pointerPoint(e) {
-        return getPosterRelativePoint(e.clientX, e.clientY);
-      }
+      function pointerPoint(e) { return getPosterRelativePoint(e.clientX, e.clientY); }
 
       item.addEventListener('pointerdown', (e) => {
         if (isTemplateConfirmed) return;
@@ -1279,18 +1275,35 @@
       viewerIndex = 0;
     }
 
+    function openSwipeViewer(index) {
+      if (!generatedCards.length) return;
+      viewerIndex = Math.max(0, Math.min(index, generatedCards.length - 1));
+      swipeImage.src = generatedCards[viewerIndex].url;
+      swipeModal.classList.add('open');
+      swipeModal.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeSwipeViewer() {
+      swipeModal.classList.remove('open');
+      swipeModal.setAttribute('aria-hidden', 'true');
+    }
+
+    function showPrevCard() {
+      if (!generatedCards.length) return;
+      viewerIndex = (viewerIndex - 1 + generatedCards.length) % generatedCards.length;
+      swipeImage.src = generatedCards[viewerIndex].url;
+    }
+
+    function showNextCard() {
+      if (!generatedCards.length) return;
+      viewerIndex = (viewerIndex + 1) % generatedCards.length;
+      swipeImage.src = generatedCards[viewerIndex].url;
+    }
+
     function buildViewerCard(card, index) {
       const el = document.createElement('div');
       el.className = 'viewer-card';
-      el.innerHTML = `
-        <img src="${card.url}" alt="${card.filename}" draggable="false">
-        <div class="viewer-actions">
-          <button class="btn" data-action="open">Открыть</button>
-          <button class="btn" data-action="download">Скачать</button>
-          <button class="btn" data-action="share">Поделиться</button>
-        </div>
-      `;
-
+      el.innerHTML = `<img src="${card.url}" alt="${card.filename}" draggable="false">`;
       const img = el.querySelector('img');
       let pressTimer = null;
       let moved = false;
@@ -1332,23 +1345,6 @@
       img.addEventListener('pointercancel', cancelPress);
       img.addEventListener('pointerleave', cancelPress);
 
-      el.querySelector('[data-action="open"]').addEventListener('click', () => openSwipeViewer(index));
-      el.querySelector('[data-action="download"]').addEventListener('click', () => downloadBlob(card.blob, card.filename));
-      el.querySelector('[data-action="share"]').addEventListener('click', async () => {
-        try {
-          const file = new File([card.blob], card.filename, { type: 'image/png' });
-          if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            await navigator.share({ files: [file], title: card.filename });
-          } else if (navigator.share) {
-            await navigator.share({ title: card.filename, url: card.url });
-          } else {
-            setStatus('Поделиться в этом браузере не поддерживается.');
-          }
-        } catch {
-          setStatus('Отправка отменена.');
-        }
-      });
-
       return el;
     }
 
@@ -1359,6 +1355,7 @@
       });
       builderPanel.style.display = 'none';
       viewerShell.style.display = 'grid';
+      viewerShell.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     async function downloadAllGenerated() {
@@ -1410,31 +1407,6 @@
         generateBtn.disabled = false;
         downloadAllBtn.disabled = false;
       }
-    }
-
-    function openSwipeViewer(index) {
-      if (!generatedCards.length) return;
-      viewerIndex = Math.max(0, Math.min(index, generatedCards.length - 1));
-      swipeImage.src = generatedCards[viewerIndex].url;
-      swipeModal.classList.add('open');
-      swipeModal.setAttribute('aria-hidden', 'false');
-    }
-
-    function closeSwipeViewer() {
-      swipeModal.classList.remove('open');
-      swipeModal.setAttribute('aria-hidden', 'true');
-    }
-
-    function showPrevCard() {
-      if (!generatedCards.length) return;
-      viewerIndex = (viewerIndex - 1 + generatedCards.length) % generatedCards.length;
-      swipeImage.src = generatedCards[viewerIndex].url;
-    }
-
-    function showNextCard() {
-      if (!generatedCards.length) return;
-      viewerIndex = (viewerIndex + 1) % generatedCards.length;
-      swipeImage.src = generatedCards[viewerIndex].url;
     }
 
     document.addEventListener('click', (e) => {

@@ -9,16 +9,11 @@
     :root {
       --bg-1: #06152f;
       --bg-2: #123a7a;
-      --panel: rgba(255,255,255,0.10);
-      --line: rgba(255,255,255,0.14);
       --text: #ffffff;
       --muted: rgba(255,255,255,0.74);
       --shadow: 0 18px 48px rgba(0,0,0,0.28);
       --slot-stroke: #1edbff;
       --slot-glow: rgba(30, 219, 255, 0.22);
-      --badge-blue-1: #56dfff;
-      --badge-blue-2: #2ab8ff;
-      --badge-stroke: #0b6fff;
       --canvas-w: 1080;
       --canvas-h: 1350;
     }
@@ -318,16 +313,18 @@
       user-select: none;
     }
 
-.badge {
-  position: absolute;
-  width: 260px;
-  height: 146px;
-  border-radius: 56px 0 56px 0;
-  background: #34c9ee;
-  border: 5px solid #4be6ff;
-  overflow: hidden;
-  z-index: 20;
-}
+    .badge {
+      position: absolute;
+      width: 260px;
+      height: 146px;
+      border-radius: 56px 0 56px 0;
+      background: #34c9ee;
+      border: 5px solid #4be6ff;
+      overflow: hidden;
+      z-index: 20;
+      isolation: isolate;
+      box-shadow: none;
+    }
 
     .badge span {
       position: absolute;
@@ -677,7 +674,7 @@
 
   <script>
     const DEFAULT_STATE = {
-      version: 7,
+      version: 8,
       title: 'СУНДУКИ',
       bgImage: null,
       accentColor: '#1edbff',
@@ -770,20 +767,29 @@
       return `rgba(${r}, ${g}, ${b}, ${alpha})`;
     }
 
-function applyAccentColor(hex) {
-  const glow = hexToRgba(hex, 0.22);
+    function readFileAsDataURL(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
 
-  slot1.style.borderColor = hex;
-  slot2.style.borderColor = hex;
-  slot1.style.boxShadow = `inset 0 1px 0 rgba(255,255,255,0.18), 0 10px 28px rgba(0,0,0,0.12), 0 0 24px ${glow}`;
-  slot2.style.boxShadow = `inset 0 1px 0 rgba(255,255,255,0.18), 0 10px 28px rgba(0,0,0,0.12), 0 0 24px ${glow}`;
+    function applyAccentColor(hex) {
+      const glow = hexToRgba(hex, 0.22);
 
-  [badge1, badge2].forEach(badge => {
-    badge.style.borderColor = hex;
-    badge.style.background = hex;
-    badge.style.boxShadow = 'none';
-  });
-}
+      slot1.style.borderColor = hex;
+      slot2.style.borderColor = hex;
+      slot1.style.boxShadow = `inset 0 1px 0 rgba(255,255,255,0.18), 0 10px 28px rgba(0,0,0,0.12), 0 0 24px ${glow}`;
+      slot2.style.boxShadow = `inset 0 1px 0 rgba(255,255,255,0.18), 0 10px 28px rgba(0,0,0,0.12), 0 0 24px ${glow}`;
+
+      [badge1, badge2].forEach((badge) => {
+        badge.style.borderColor = hex;
+        badge.style.background = hex;
+        badge.style.boxShadow = 'none';
+      });
+    }
 
     function setSelectedItem(item) {
       document.querySelectorAll('.overlay-item.selected').forEach(el => el.classList.remove('selected'));
@@ -841,7 +847,7 @@ function applyAccentColor(hex) {
       });
 
       return {
-        version: 7,
+        version: 8,
         title: (titleInput.value || '').trim() || 'СУНДУКИ',
         bgImage: bgImage.style.display === 'block' ? bgImage.src : null,
         accentColor: accentColorInput.value,
@@ -1135,13 +1141,16 @@ function applyAccentColor(hex) {
       const hadSelection = selectedItem;
       document.querySelectorAll('.overlay-item.selected').forEach(el => el.classList.remove('selected'));
       document.querySelectorAll('.item-menu').forEach(el => el.classList.remove('open'));
+
       const canvas = await html2canvas(poster, {
         scale: 2,
         useCORS: true,
         backgroundColor: null,
         logging: false
       });
+
       if (hadSelection) hadSelection.classList.add('selected');
+
       return await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
     }
 
@@ -1179,6 +1188,7 @@ function applyAccentColor(hex) {
         setStatus('Сначала выбери фотографии.');
         return;
       }
+
       const pairsCount = Math.floor(files.length / 2);
       if (pairsCount === 0) {
         setStatus('Нужно минимум 2 фото.');
@@ -1194,11 +1204,17 @@ function applyAccentColor(hex) {
           setStatus(`Сборка карточки ${i + 1} из ${pairsCount}...`);
           const a = files[i * 2];
           const b = files[i * 2 + 1];
-          const [srcA, srcB] = await Promise.all([readFileAsDataURL(a), readFileAsDataURL(b)]);
+          const [srcA, srcB] = await Promise.all([
+            readFileAsDataURL(a),
+            readFileAsDataURL(b)
+          ]);
+
           setSlotImage(slot1Photo, srcA);
           setSlotImage(slot2Photo, srcB);
+
           await new Promise(r => setTimeout(r, 60));
           await exportPosterPNG(`chests-card-${i + 1}.png`, isMobileLike());
+
           if (isMobileLike()) break;
         }
 
@@ -1234,6 +1250,7 @@ function applyAccentColor(hex) {
         setStatus('Пипетка в этом браузере не поддерживается.');
         return;
       }
+
       try {
         const eyeDropper = new EyeDropper();
         const result = await eyeDropper.open();
@@ -1249,6 +1266,7 @@ function applyAccentColor(hex) {
     bgInput.addEventListener('change', async () => {
       const file = bgInput.files?.[0];
       if (!file) return;
+
       try {
         saveHistory();
         const src = await readFileAsDataURL(file);
@@ -1260,6 +1278,7 @@ function applyAccentColor(hex) {
         console.error(err);
         setStatus('Не удалось загрузить фон.');
       }
+
       bgInput.value = '';
     });
 
@@ -1279,6 +1298,7 @@ function applyAccentColor(hex) {
     watermarkInput.addEventListener('change', () => {
       const file = watermarkInput.files?.[0];
       if (!file) return;
+
       const reader = new FileReader();
       reader.onload = (e) => {
         createOverlayItem(e.target.result, 0, {
@@ -1304,6 +1324,7 @@ function applyAccentColor(hex) {
         setStatus('История пуста.');
         return;
       }
+
       try {
         restoreFromState(JSON.parse(prev));
         setStatus('Последнее действие отменено.');
@@ -1316,6 +1337,7 @@ function applyAccentColor(hex) {
     templateInput.addEventListener('change', async () => {
       const file = templateInput.files?.[0];
       if (!file) return;
+
       try {
         const text = await file.text();
         const data = JSON.parse(text);
@@ -1325,6 +1347,7 @@ function applyAccentColor(hex) {
         console.error(err);
         setStatus('Не удалось загрузить шаблон.');
       }
+
       templateInput.value = '';
     });
 
@@ -1355,6 +1378,7 @@ function applyAccentColor(hex) {
         setStatus('Фотографии не выбраны.');
         return;
       }
+
       const pairs = Math.floor(selectedFiles.length / 2);
       setStatus(`Выбрано фото: ${selectedFiles.length}. Готовых пар: ${pairs}.` + (selectedFiles.length % 2 ? ' Последнее будет пропущено.' : ''));
     });
@@ -1364,6 +1388,7 @@ function applyAccentColor(hex) {
         setStatus('Для предпросмотра нужно минимум 2 фото.');
         return;
       }
+
       try {
         const [srcA, srcB] = await Promise.all([
           readFileAsDataURL(selectedFiles[0]),
@@ -1408,8 +1433,10 @@ function applyAccentColor(hex) {
 
     exportShareBtn.addEventListener('click', async () => {
       if (!lastExportBlob) return;
+
       try {
         const file = new File([lastExportBlob], lastExportFilename, { type: 'image/png' });
+
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
           await navigator.share({ files: [file], title: lastExportFilename });
         } else if (navigator.share) {

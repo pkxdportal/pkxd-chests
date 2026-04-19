@@ -323,18 +323,19 @@
       width: 260px;
       height: 146px;
       border-radius: 56px 0 56px 0;
-      background: linear-gradient(180deg, var(--badge-blue-1), var(--badge-blue-2));
-      border: 5px solid rgba(36, 226, 255, 0.55);
-      box-shadow: inset 0 2px 0 rgba(255,255,255,0.16), 0 10px 24px rgba(0,0,0,0.14);
+      background: #56dfff;
+      border: 5px solid #1edbff;
+      box-shadow: inset 0 2px 0 rgba(255,255,255,0.16);
       overflow: hidden;
       z-index: 7;
+      isolation: isolate;
     }
 
     .badge::before {
       content: "";
       position: absolute;
       inset: 0;
-      background: linear-gradient(135deg, rgba(255,255,255,0.14), transparent 34%);
+      background: linear-gradient(180deg, rgba(255,255,255,0.10), transparent 30%);
       pointer-events: none;
     }
 
@@ -462,6 +463,66 @@
       line-height: 1.35;
     }
 
+    .export-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background: rgba(2, 8, 24, 0.86);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      backdrop-filter: blur(8px);
+    }
+
+    .export-modal.open {
+      display: flex;
+    }
+
+    .export-card {
+      width: min(92vw, 560px);
+      max-height: 90vh;
+      overflow: auto;
+      background: rgba(10, 21, 56, 0.96);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.38);
+      padding: 16px;
+    }
+
+    .export-card h2 {
+      margin: 0 0 8px;
+      font-size: 20px;
+      font-weight: 900;
+    }
+
+    .export-card p {
+      margin: 0 0 12px;
+      color: rgba(255,255,255,0.76);
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .export-preview {
+      width: 100%;
+      border-radius: 14px;
+      overflow: hidden;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.10);
+      margin-bottom: 12px;
+    }
+
+    .export-preview img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .export-actions {
+      display: grid;
+      gap: 10px;
+    }
+
     @media (max-width: 1240px) {
       body {
         grid-template-columns: 320px 1080px;
@@ -563,7 +624,7 @@
         <button id="saveCurrentBtn" class="btn">Сохранить превью</button>
       </div>
       <button id="generateBtn" class="btn primary">Собрать все карточки</button>
-      <div class="hint">Фото идут по порядку: 1+2, 3+4, 5+6. Если число нечётное — последнее пропускается.</div>
+      <div class="hint">На телефоне после генерации откроется экран с предпросмотром, кнопками «Открыть», «Скачать» и «Поделиться». На компьютере останется обычное скачивание.</div>
     </div>
 
     <div class="group">
@@ -573,7 +634,7 @@
   </aside>
 
   <section class="workspace">
-    <div class="mobile-note">На телефоне: один палец двигает объект, два пальца меняют размер и поворот. Меню с тремя точками осталось.</div>
+    <div class="mobile-note">На телефоне: один палец двигает объект, два пальца меняют размер и поворот. После генерации картинку можно открыть, скачать или отправить через системное меню.</div>
 
     <div class="canvas-wrap">
       <div class="preview-shell">
@@ -608,9 +669,25 @@
     </div>
   </section>
 
+  <div id="exportModal" class="export-modal" aria-hidden="true">
+    <div class="export-card">
+      <h2>Готовое изображение</h2>
+      <p>На телефоне удобнее открыть картинку и сохранить её как изображение через браузер или системное меню.</p>
+      <div class="export-preview">
+        <img id="exportPreviewImage" alt="Готовый PNG" />
+      </div>
+      <div class="export-actions">
+        <button id="exportOpenBtn" class="btn">Открыть изображение</button>
+        <button id="exportDownloadBtn" class="btn">Скачать PNG</button>
+        <button id="exportShareBtn" class="btn">Поделиться</button>
+        <button id="exportCloseBtn" class="btn">Закрыть</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const DEFAULT_STATE = {
-      version: 6,
+      version: 7,
       title: 'СУНДУКИ',
       bgImage: null,
       accentColor: '#1edbff',
@@ -645,10 +722,23 @@
     const badge2 = document.getElementById('badge2');
     const accentColorInput = document.getElementById('accentColorInput');
     const pickAccentBtn = document.getElementById('pickAccentBtn');
+    const exportModal = document.getElementById('exportModal');
+    const exportPreviewImage = document.getElementById('exportPreviewImage');
+    const exportOpenBtn = document.getElementById('exportOpenBtn');
+    const exportDownloadBtn = document.getElementById('exportDownloadBtn');
+    const exportShareBtn = document.getElementById('exportShareBtn');
+    const exportCloseBtn = document.getElementById('exportCloseBtn');
 
     let selectedFiles = [];
     let selectedItem = null;
+    let lastExportBlob = null;
+    let lastExportUrl = '';
+    let lastExportFilename = 'chests-card.png';
     const historyStack = [];
+
+    function isMobileLike() {
+      return window.matchMedia('(max-width: 900px)').matches || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    }
 
     function setStatus(text) {
       statusBox.textContent = text;
@@ -691,10 +781,7 @@
     }
 
     function applyAccentColor(hex) {
-      const strokeSoft = hexToRgba(hex, 0.55);
       const glow = hexToRgba(hex, 0.22);
-      const badgeTop = hexToRgba(hex, 0.78);
-      const badgeBottom = hexToRgba(hex, 0.60);
 
       slot1.style.borderColor = hex;
       slot2.style.borderColor = hex;
@@ -702,10 +789,8 @@
       slot2.style.boxShadow = `inset 0 1px 0 rgba(255,255,255,0.18), 0 10px 28px rgba(0,0,0,0.12), 0 0 24px ${glow}`;
 
       [badge1, badge2].forEach(badge => {
-        badge.style.borderColor = strokeSoft;
-        badge.style.background = `linear-gradient(180deg, ${badgeTop}, ${badgeBottom})`;
-      });
-    }
+        badge.style.borderColor = hex;
+        badge.style.background = `linear-gradient(180deg, ${hex
 
     function readFileAsDataURL(file) {
       return new Promise((resolve, reject) => {
@@ -772,7 +857,7 @@
       });
 
       return {
-        version: 6,
+        version: 7,
         title: (titleInput.value || '').trim() || 'СУНДУКИ',
         bgImage: bgImage.style.display === 'block' ? bgImage.src : null,
         accentColor: accentColorInput.value,
@@ -885,6 +970,8 @@
       let mode = 'idle';
       let startSingle = null;
       let startMulti = null;
+      let gestureHistorySaved = false;
+      let dragHistorySaved = false;
 
       function pointerPoint(e) {
         return getPosterRelativePoint(e.clientX, e.clientY);
@@ -901,13 +988,17 @@
         if (activePointers.size === 1) {
           mode = 'drag';
           item.classList.add('dragging');
+          dragHistorySaved = false;
           startSingle = {
             pointer: pointerPoint(e),
             left: parseFloat(item.style.left || '0'),
             top: parseFloat(item.style.top || '0')
           };
         } else if (activePointers.size === 2) {
-          saveHistory();
+          if (!gestureHistorySaved) {
+            saveHistory();
+            gestureHistorySaved = true;
+          }
           mode = 'gesture';
           item.classList.remove('dragging');
           const pts = Array.from(activePointers.values());
@@ -929,6 +1020,10 @@
         activePointers.set(e.pointerId, pointerPoint(e));
 
         if (mode === 'drag' && activePointers.size === 1 && startSingle) {
+          if (!dragHistorySaved) {
+            saveHistory();
+            dragHistorySaved = true;
+          }
           const current = activePointers.get(e.pointerId);
           const dx = current.x - startSingle.pointer.x;
           const dy = current.y - startSingle.pointer.y;
@@ -961,12 +1056,6 @@
         activePointers.delete(e.pointerId);
         try { item.releasePointerCapture(e.pointerId); } catch (_) {}
 
-        if (mode === 'drag') {
-          saveHistory();
-        } else if (mode === 'gesture') {
-          saveHistory();
-        }
-
         if (activePointers.size === 1) {
           const remaining = Array.from(activePointers.values())[0];
           mode = 'drag';
@@ -977,17 +1066,19 @@
             top: parseFloat(item.style.top || '0')
           };
           startMulti = null;
+          dragHistorySaved = true;
         } else {
           mode = 'idle';
           item.classList.remove('dragging');
           startSingle = null;
           startMulti = null;
+          dragHistorySaved = false;
+          gestureHistorySaved = false;
         }
       }
 
       item.addEventListener('pointerup', finishPointer);
       item.addEventListener('pointercancel', finishPointer);
-      item.addEventListener('pointerleave', finishPointer);
 
       item.addEventListener('wheel', (e) => {
         e.preventDefault();
@@ -1033,7 +1124,30 @@
       setStatus('Объект удалён.');
     }
 
-    async function exportPosterPNG(filename = 'chests-card.png') {
+    function cleanupExportUrl() {
+      if (lastExportUrl) {
+        URL.revokeObjectURL(lastExportUrl);
+        lastExportUrl = '';
+      }
+      lastExportBlob = null;
+    }
+
+    function showExportModal(blob, filename) {
+      cleanupExportUrl();
+      lastExportBlob = blob;
+      lastExportFilename = filename;
+      lastExportUrl = URL.createObjectURL(blob);
+      exportPreviewImage.src = lastExportUrl;
+      exportModal.classList.add('open');
+      exportModal.setAttribute('aria-hidden', 'false');
+    }
+
+    function hideExportModal() {
+      exportModal.classList.remove('open');
+      exportModal.setAttribute('aria-hidden', 'true');
+    }
+
+    async function renderPosterBlob() {
       const hadSelection = selectedItem;
       document.querySelectorAll('.overlay-item.selected').forEach(el => el.classList.remove('selected'));
       document.querySelectorAll('.item-menu').forEach(el => el.classList.remove('open'));
@@ -1044,10 +1158,25 @@
         logging: false
       });
       if (hadSelection) hadSelection.classList.add('selected');
+      return await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+    }
+
+    async function exportPosterPNG(filename = 'chests-card.png', useMobileModal = null) {
+      const blob = await renderPosterBlob();
+      if (!blob) throw new Error('Не удалось создать PNG');
+
+      const mobileMode = useMobileModal ?? isMobileLike();
+      if (mobileMode) {
+        showExportModal(blob, filename);
+        return;
+      }
+
+      const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
-      link.href = canvas.toDataURL('image/png');
+      link.href = url;
       link.download = filename;
       link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1500);
     }
 
     function saveTemplate() {
@@ -1085,9 +1214,15 @@
           setSlotImage(slot1Photo, srcA);
           setSlotImage(slot2Photo, srcB);
           await new Promise(r => setTimeout(r, 60));
-          await exportPosterPNG(`chests-card-${i + 1}.png`);
+          await exportPosterPNG(`chests-card-${i + 1}.png`, isMobileLike());
+          if (isMobileLike()) break;
         }
-        setStatus(`Готово. Карточек собрано: ${pairsCount}.` + (files.length % 2 ? ' Последнее фото пропущено.' : ''));
+
+        if (isMobileLike()) {
+          setStatus('Готово. На телефоне показано первое готовое изображение для сохранения или отправки.');
+        } else {
+          setStatus(`Готово. Карточек собрано: ${pairsCount}.` + (files.length % 2 ? ' Последнее фото пропущено.' : ''));
+        }
       } catch (err) {
         console.error(err);
         setStatus('Ошибка при сборке карточек.');
@@ -1225,6 +1360,8 @@
       selectedFiles = [];
       photosInput.value = '';
       historyStack.length = 0;
+      cleanupExportUrl();
+      hideExportModal();
       setStatus('Сброшено к базовому виду.');
     });
 
@@ -1264,12 +1401,49 @@
     saveCurrentBtn.addEventListener('click', async () => {
       try {
         setStatus('Сохраняю текущий просмотр...');
-        await exportPosterPNG('chests-current-preview.png');
-        setStatus('Текущий просмотр сохранён.');
+        await exportPosterPNG('chests-current-preview.png', isMobileLike());
+        setStatus(isMobileLike() ? 'Открылся экран с готовым изображением.' : 'Текущий просмотр сохранён.');
       } catch (err) {
         console.error(err);
         setStatus('Не удалось сохранить PNG.');
       }
+    });
+
+    exportOpenBtn.addEventListener('click', () => {
+      if (!lastExportUrl) return;
+      window.open(lastExportUrl, '_blank');
+    });
+
+    exportDownloadBtn.addEventListener('click', () => {
+      if (!lastExportUrl) return;
+      const link = document.createElement('a');
+      link.href = lastExportUrl;
+      link.download = lastExportFilename;
+      link.click();
+    });
+
+    exportShareBtn.addEventListener('click', async () => {
+      if (!lastExportBlob) return;
+      try {
+        const file = new File([lastExportBlob], lastExportFilename, { type: 'image/png' });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], title: lastExportFilename });
+        } else if (navigator.share) {
+          await navigator.share({ title: lastExportFilename, url: lastExportUrl });
+        } else {
+          setStatus('Поделиться в этом браузере не поддерживается.');
+        }
+      } catch (err) {
+        setStatus('Отправка отменена.');
+      }
+    });
+
+    exportCloseBtn.addEventListener('click', () => {
+      hideExportModal();
+    });
+
+    exportModal.addEventListener('click', (e) => {
+      if (e.target === exportModal) hideExportModal();
     });
 
     restoreFromState(DEFAULT_STATE);
